@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Web Museum</title>
+  <style>
+    /* Reset and basic styling */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { overflow: hidden; font-family: Arial, sans-serif; background-color: #f0f0f0; }
+    /* Gallery container: holds the gallery and clips overflow */
+    .gallery-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* Gallery: flex row containing items, positioned absolutely */
+    .gallery {
+      display: flex;
+      position: absolute;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      transition: transform 0.5s ease-in-out;
+    }
+    /* Each gallery item: 50vw wide with 16:9 ratio, plus side margins */
+    .gallery-item {
+      flex: 0 0 auto;
+      width: 50vw;
+      height: calc(50vw * 9 / 16);
+      margin: 0 20px;
+      text-align: center;
+    }
+    /* Preview container and scaling for the iframe */
+    .preview-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .iframe-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 200%;
+      height: 200%;
+      transform: scale(0.5);
+      transform-origin: top left;
+    }
+    .iframe-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      pointer-events: none;
+    }
+    /* Item info: title and description with increased font sizes */
+    .item-info { margin-top: 8px; }
+    .item-title {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .item-title a,
+    .item-description a {
+      text-decoration: none;
+      color: inherit;
+      pointer-events: auto; /* ensure the anchor receives clicks */
+      -webkit-tap-highlight-color: transparent;
+    }
+    .item-description {
+      font-size: 24px;
+      color: #555;
+    }
+    /* Navigation arrows: enlarged and positioned at lower corners */
+    .arrow {
+      position: absolute;
+      bottom: 20px;
+      font-size: 8rem;
+      color: #333;
+      background: rgba(255,255,255,0.8);
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      z-index: 100;
+    }
+    .arrow-left { left: 20px; }
+    .arrow-right { right: 20px; }
+  </style>
+</head>
+<body>
+  <div class="gallery-container">
+    <!-- Navigation arrows -->
+    <button class="arrow arrow-left" id="prev">&#8592;</button>
+    <button class="arrow arrow-right" id="next">&#8594;</button>
+
+    <!-- Gallery wrapper -->
+    <div class="gallery" id="gallery">
+      <!-- Gallery Item 1 -->
+      <div class="gallery-item">
+        <div class="preview-container" onclick="window.open('https://calebhmeyer.github.io/earth/', '_blank')">
+          <div class="iframe-wrapper">
+            <iframe src="https://calebhmeyer.github.io/earth/" frameborder="0"></iframe>
+          </div>
+        </div>
+        <div class="item-info">
+          <div class="item-title">
+            <a href="https://calebhmeyer.github.io/earth/" target="_blank" onclick="event.stopPropagation();">
+              Blue Marble
+            </a>
+          </div>
+          <div class="item-description">
+            <a href="https://calebhmeyer.github.io/earth/" target="_blank" onclick="event.stopPropagation();">
+              An interactive earth
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- Gallery Item 2 -->
+      <div class="gallery-item">
+        <div class="preview-container" onclick="window.open('https://calebhmeyer.github.io/buildingcity/', '_blank')">
+          <div class="iframe-wrapper">
+            <iframe src="https://calebhmeyer.github.io/buildingcity/" frameborder="0"></iframe>
+          </div>
+        </div>
+        <div class="item-info">
+          <div class="item-title">
+            <a href="https://calebhmeyer.github.io/buildingcity/" target="_blank" onclick="event.stopPropagation();">
+              Downtown stroll
+            </a>
+          </div>
+          <div class="item-description">
+            <a href="https://calebhmeyer.github.io/buildingcity/" target="_blank" onclick="event.stopPropagation();">
+              A city thats under construction
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- Gallery Item 3 -->
+      <div class="gallery-item">
+        <div class="preview-container" onclick="window.open('https://calebhmeyer.github.io/splitflapdisplay/', '_blank')">
+          <div class="iframe-wrapper">
+            <iframe src="https://calebhmeyer.github.io/splitflapdisplay/" frameborder="0"></iframe>
+          </div>
+        </div>
+        <div class="item-info">
+          <div class="item-title">
+            <a href="https://calebhmeyer.github.io/splitflapdisplay/" target="_blank" onclick="event.stopPropagation();">
+              Split Flap Display
+            </a>
+          </div>
+          <div class="item-description">
+            <a href="https://calebhmeyer.github.io/splitflapdisplay/" target="_blank" onclick="event.stopPropagation();">
+              An online free split flap display that you can customize. One of my more fun pieces.
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // JavaScript for centering the active gallery item
+    const gallery = document.getElementById('gallery');
+    const items = document.querySelectorAll('.gallery-item');
+    let currentIndex = 0;
+
+    function updateGallery() {
+      const containerWidth = document.documentElement.clientWidth;
+      // Get computed margins for a gallery item
+      const itemStyle = getComputedStyle(items[0]);
+      const marginLeft = parseFloat(itemStyle.marginLeft);
+      const marginRight = parseFloat(itemStyle.marginRight);
+      // Total width includes the element's width and its horizontal margins
+      const itemTotalWidth = items[0].offsetWidth + marginLeft + marginRight;
+      // Offset so that the current item is centered
+      const offset = containerWidth / 2 - itemTotalWidth / 2;
+      // Shift the gallery horizontally
+      gallery.style.transform = `translateX(${offset - currentIndex * itemTotalWidth}px) translateY(-50%)`;
+    }
+
+    // Navigation: next and previous, with bounds checking
+    document.getElementById('next').addEventListener('click', () => {
+      if (currentIndex < items.length - 1) {
+        currentIndex++;
+        updateGallery();
+      }
+    });
+
+    document.getElementById('prev').addEventListener('click', () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateGallery();
+      }
+    });
+
+    updateGallery();
+    window.addEventListener('resize', updateGallery);
+  </script>
+</body>
+</html>
