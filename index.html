@@ -20,14 +20,13 @@
       position: absolute;
       top: 50%;
       left: 0;
+      /* Vertical centering will be combined with horizontal translation in JS */
       transform: translateY(-50%);
       transition: transform 0.5s ease-in-out;
     }
-    /* Each gallery item: 50vw wide with 16:9 ratio, plus side margins */
+    /* Gallery items – their dimensions will be set dynamically based on orientation */
     .gallery-item {
       flex: 0 0 auto;
-      width: 50vw;
-      height: calc(50vw * 9 / 16);
       margin: 0 20px;
       text-align: center;
     }
@@ -65,17 +64,17 @@
     .item-description a {
       text-decoration: none;
       color: inherit;
-      pointer-events: auto; /* ensure the anchor receives clicks */
+      pointer-events: auto;
       -webkit-tap-highlight-color: transparent;
     }
     .item-description {
       font-size: 24px;
       color: #555;
     }
-    /* Navigation arrows: enlarged and positioned at lower corners */
+    /* Navigation arrows: enlarged and now positioned at the top */
     .arrow {
       position: absolute;
-      bottom: 20px;
+      top: 20px;
       font-size: 8rem;
       color: #333;
       background: rgba(255,255,255,0.8);
@@ -90,13 +89,13 @@
 </head>
 <body>
   <div class="gallery-container">
-    <!-- Navigation arrows -->
+    <!-- Navigation arrows (now at the top) -->
     <button class="arrow arrow-left" id="prev">&#8592;</button>
     <button class="arrow arrow-right" id="next">&#8594;</button>
 
     <!-- Gallery wrapper -->
     <div class="gallery" id="gallery">
-      <!-- Gallery Item 1 -->
+      <!-- Gallery Item 1: Blue Marble -->
       <div class="gallery-item">
         <div class="preview-container" onclick="window.open('https://calebhmeyer.github.io/earth/', '_blank')">
           <div class="iframe-wrapper">
@@ -116,7 +115,7 @@
           </div>
         </div>
       </div>
-      <!-- Gallery Item 2 -->
+      <!-- Gallery Item 2: Downtown stroll -->
       <div class="gallery-item">
         <div class="preview-container" onclick="window.open('https://calebhmeyer.github.io/buildingcity/', '_blank')">
           <div class="iframe-wrapper">
@@ -136,9 +135,9 @@
           </div>
         </div>
       </div>
-      <!-- Gallery Item balls -->
+      <!-- Gallery Item 3: Gravitational balls (O balls) -->
       <div class="gallery-item">
-        <div class="preview-container" onclick="window.open('https://calebhmeyer.github.io/splitflapdisplay/', '_blank')">
+        <div class="preview-container" onclick="window.open('https://calebhmeyer.github.io/Ohballs/', '_blank')">
           <div class="iframe-wrapper">
             <iframe src="https://calebhmeyer.github.io/Ohballs/" frameborder="0"></iframe>
           </div>
@@ -151,12 +150,12 @@
           </div>
           <div class="item-description">
             <a href="https://calebhmeyer.github.io/Ohballs/" target="_blank" onclick="event.stopPropagation();">
-              Simulate gravity woth the most complex tools known to date - balls. 
+              Simulate gravity woth the most complex tools known to date - balls.
             </a>
           </div>
         </div>
       </div>
-      <!-- Gallery Item split flap display -->
+      <!-- Gallery Item 4: Split Flap Display -->
       <div class="gallery-item">
         <div class="preview-container" onclick="window.open('https://calebhmeyer.github.io/splitflapdisplay/', '_blank')">
           <div class="iframe-wrapper">
@@ -176,7 +175,7 @@
           </div>
         </div>
       </div>
-      <!-- Gallery Item 4 -->
+      <!-- Gallery Item 5: Water -->
       <div class="gallery-item">
         <div class="preview-container" onclick="window.open('https://calebhmeyer.github.io/water/', '_blank')">
           <div class="iframe-wrapper">
@@ -200,12 +199,29 @@
   </div>
 
   <script>
-    // JavaScript for centering the active gallery item
     const gallery = document.getElementById('gallery');
     const items = document.querySelectorAll('.gallery-item');
     let currentIndex = 0;
 
+    // Update gallery item dimensions based on viewport orientation.
+    function updateGalleryDimensions() {
+      const isLandscape = window.innerWidth >= window.innerHeight;
+      items.forEach(item => {
+        if (isLandscape) {
+          // Landscape mode: 16:9 aspect ratio.
+          item.style.width = "50vw";
+          item.style.height = `calc(50vw * 9 / 16)`;
+        } else {
+          // Portrait mode: 9:16 aspect ratio.
+          item.style.height = "50vh";
+          item.style.width = `calc(50vh * 9 / 16)`;
+        }
+      });
+    }
+
+    // Center the active gallery item horizontally.
     function updateGallery() {
+      updateGalleryDimensions();
       const containerWidth = document.documentElement.clientWidth;
       // Get computed margins for a gallery item
       const itemStyle = getComputedStyle(items[0]);
@@ -213,13 +229,12 @@
       const marginRight = parseFloat(itemStyle.marginRight);
       // Total width includes the element's width and its horizontal margins
       const itemTotalWidth = items[0].offsetWidth + marginLeft + marginRight;
-      // Offset so that the current item is centered
+      // Calculate the offset to center the active item
       const offset = containerWidth / 2 - itemTotalWidth / 2;
-      // Shift the gallery horizontally
       gallery.style.transform = `translateX(${offset - currentIndex * itemTotalWidth}px) translateY(-50%)`;
     }
 
-    // Navigation: next and previous, with bounds checking
+    // Navigation: next and previous with bounds checking.
     document.getElementById('next').addEventListener('click', () => {
       if (currentIndex < items.length - 1) {
         currentIndex++;
@@ -234,8 +249,42 @@
       }
     });
 
+    // Swipe navigation support.
+    let touchStartX = null;
+    let touchEndX = null;
+    const swipeThreshold = 50; // minimum swipe distance in px
+
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, false);
+
+    document.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleGesture();
+    }, false);
+
+    function handleGesture() {
+      if (touchStartX === null || touchEndX === null) return;
+      const diff = touchStartX - touchEndX;
+      if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0 && currentIndex < items.length - 1) {
+          // Swipe left: next item.
+          currentIndex++;
+          updateGallery();
+        } else if (diff < 0 && currentIndex > 0) {
+          // Swipe right: previous item.
+          currentIndex--;
+          updateGallery();
+        }
+      }
+      touchStartX = null;
+      touchEndX = null;
+    }
+
+    // Initial update and update on resize.
     updateGallery();
     window.addEventListener('resize', updateGallery);
   </script>
 </body>
+</html>
 </html>
